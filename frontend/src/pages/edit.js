@@ -319,6 +319,10 @@ function Edit() {
             "tool-manage": () => {
                 navigate('/manage')
             },
+
+            "tool-users": () => {
+                navigate('/users')
+            },
         }
 
         const hasEvent = event.hasOwnProperty(eventName)

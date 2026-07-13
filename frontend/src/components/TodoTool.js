@@ -45,6 +45,7 @@ function TodoTool({eventInput}) {
                 <IButton text="深色模式" config='mode-theme' action="tool-theme"/>
                 <IButton text="打码模式" config='mode-blur' action="tool-mosaic"/>
                 <IButton text="配置页面" href='/manage' action="tool-manage"/>
+                <IButton text="用户列表" href='/users' action="tool-users"/>
             </div>
             
             <Divider className="tool-divider" />

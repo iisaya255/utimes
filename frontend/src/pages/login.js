@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Button, Input, Card, Typography, message, Space } from 'antd'
 import { supabase } from '../services/supabase'
 
-const { Title, Text } = Typography
+const { Title } = Typography
 
 /**
  * 登录页面 - 使用 Supabase Email/Password 认证
