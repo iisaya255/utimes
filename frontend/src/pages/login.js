@@ -11,7 +11,7 @@ function Login() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
-    const [isSignUp, setIsSignUp] = useState(false)
+    // const [isSignUp, setIsSignUp] = useState(false)
 
     const handleSubmit = async () => {
         if (!email || !password) {
@@ -21,22 +21,25 @@ function Login() {
 
         setLoading(true)
         try {
-            let result
-            if (isSignUp) {
-                result = await supabase.auth.signUp({ email, password })
-            } else {
-                result = await supabase.auth.signInWithPassword({ email, password })
-            }
+            // let result
+            // if (isSignUp) {
+            //     result = await supabase.auth.signUp({ email, password })
+            // } else {
+            //     result = await supabase.auth.signInWithPassword({ email, password })
+            // }
+            const result = await supabase.auth.signInWithPassword({ email, password })
 
             if (result.error) {
                 message.error(result.error.message)
             } else {
-                if (isSignUp) {
-                    message.success('注册成功，请检查邮箱确认')
-                } else {
-                    message.success('登录成功')
-                    window.location.href = '/edit'
-                }
+                // if (isSignUp) {
+                //     message.success('注册成功，请检查邮箱确认')
+                // } else {
+                //     message.success('登录成功')
+                //     window.location.href = '/edit'
+                // }
+                message.success('登录成功')
+                window.location.href = '/edit'
             }
         } catch (err) {
             message.error('操作失败: ' + err.message)
@@ -111,14 +114,15 @@ function Login() {
                     loading={loading}
                     onClick={handleSubmit}
                 >
-                    {isSignUp ? '注册' : '登录'}
+                    {/* {isSignUp ? '注册' : '登录'} */}
+                    登录
                 </Button>
-                <Text
+                {/* <Text
                     style={{ display: 'block', textAlign: 'center', cursor: 'pointer', color: '#1677ff' }}
                     onClick={() => setIsSignUp(!isSignUp)}
                 >
                     {isSignUp ? '已有账号？去登录' : '没有账号？去注册'}
-                </Text>
+                </Text> */}
             </Space>
         </Card>
     </div>
