@@ -94,11 +94,23 @@ CREATE TRIGGER user_settings_updated_at
 -- 用户注册时自动创建 profile 和 settings
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+    new_username VARCHAR(50);
 BEGIN
+    -- 从邮箱生成 username，处理冲突时追加随机后缀
+    new_username := COALESCE(SPLIT_PART(NEW.email, '@', 1), 'user_' || LEFT(NEW.id::text, 8));
+
+    -- 如果 username 已存在，追加随机后缀
+    WHILE EXISTS (SELECT 1 FROM users WHERE username = new_username) LOOP
+        new_username := SPLIT_PART(NEW.email, '@', 1) || '_' || FLOOR(RANDOM() * 10000)::text;
+    END LOOP;
+
     INSERT INTO users (user_id, username, name)
-    VALUES (NEW.id, SPLIT_PART(NEW.email, '@', 1), '');
+    VALUES (NEW.id, new_username, '');
+
     INSERT INTO user_settings (user_id)
     VALUES (NEW.id);
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
