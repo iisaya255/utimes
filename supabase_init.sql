@@ -90,3 +90,19 @@ CREATE TRIGGER records_updated_at
 CREATE TRIGGER user_settings_updated_at
     BEFORE UPDATE ON user_settings
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- 用户注册时自动创建 profile 和 settings
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO users (user_id, username, name)
+    VALUES (NEW.id, SPLIT_PART(NEW.email, '@', 1), '');
+    INSERT INTO user_settings (user_id)
+    VALUES (NEW.id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION handle_new_user();
