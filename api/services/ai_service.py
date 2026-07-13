@@ -7,9 +7,8 @@ import os
 import re
 from datetime import datetime, timedelta
 
-from api.models.record import Record, Extra
+from api.models.record import Record, UserSettings
 from api.schemas.ai import PlannedItem, PlannedItemExtra
-from api.utils.record_helpers import parse_record_content
 
 
 def _safe_int(val, default=3):
@@ -21,9 +20,9 @@ def _safe_int(val, default=3):
 
 
 def get_extra_config(user_id: str):
-    """获取用户配置的 extra1 内容（用于 AI 上下文）"""
-    extra_data = Extra.one(user_id=user_id)
-    return extra_data.get("extra1", "") if extra_data else ""
+    """获取用户配置的 ai_context 内容（用于 AI 上下文）"""
+    settings = UserSettings.one(user_id=user_id)
+    return settings.get("ai_context", "") if settings else ""
 
 
 def _get_week_data(user_id: str):
@@ -35,13 +34,11 @@ def _get_week_data(user_id: str):
         date_str = date_obj.strftime('%Y%m%d')
         record = Record.one(date=date_str, user_id=user_id)
         if record:
-            data = parse_record_content(record.get("content", ""))
-            if data:
-                week_data.append({
-                    'date': date_str,
-                    'note': data.get('todo', ''),
-                    'items': data.get('dataList', [])
-                })
+            week_data.append({
+                'date': date_str,
+                'note': record.get('note', ''),
+                'items': record.get('items', [])
+            })
     return week_data
 
 

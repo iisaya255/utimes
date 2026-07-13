@@ -1,5 +1,5 @@
 """
-Record 数据模型 - 双数据源支持
+数据模型代理层 - 双数据源支持
 本地开发使用 SQLite，生产环境使用 Supabase
 通过环境变量 DATABASE_MODE 控制：sqlite / supabase（默认 sqlite）
 """
@@ -9,15 +9,15 @@ import os
 def _get_backend():
     mode = os.environ.get("DATABASE_MODE", "sqlite")
     if mode == "supabase":
-        from api.models._supabase_backend import RecordSupabase, ExtraSupabase, UsersSupabase
-        return RecordSupabase, ExtraSupabase, UsersSupabase
+        from api.models._supabase_backend import RecordSupabase, UserSettingsSupabase, UsersSupabase
+        return RecordSupabase, UserSettingsSupabase, UsersSupabase
     else:
-        from api.models._sqlite_backend import RecordSQLite, ExtraSQLite, UserSQLite
-        return RecordSQLite, ExtraSQLite, UserSQLite
+        from api.models._sqlite_backend import RecordSQLite, UserSettingsSQLite, UserSQLite
+        return RecordSQLite, UserSettingsSQLite, UserSQLite
 
 
 class Record:
-    """统一接口，代理到具体后端"""
+    """每日记录"""
 
     @classmethod
     def one(cls, **kwargs):
@@ -30,18 +30,18 @@ class Record:
         return backend.all(**kwargs)
 
     @classmethod
-    def search(cls, content, user_id=None):
+    def search(cls, query, user_id=None):
         backend, _, _ = _get_backend()
-        return backend.search(content, user_id=user_id)
+        return backend.search(query, user_id=user_id)
 
     @classmethod
-    def update_if_exist(cls, user_id, date, content):
+    def update_if_exist(cls, user_id, date, note, items):
         backend, _, _ = _get_backend()
-        return backend.update_if_exist(user_id, date, content)
+        return backend.update_if_exist(user_id, date, note, items)
 
 
-class Extra:
-    """统一接口，代理到具体后端"""
+class UserSettings:
+    """用户配置"""
 
     @classmethod
     def one(cls, **kwargs):
@@ -60,7 +60,7 @@ class Extra:
 
 
 class Users:
-    """统一接口，代理到具体后端"""
+    """用户公开信息"""
 
     @classmethod
     def all(cls):

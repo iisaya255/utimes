@@ -4,14 +4,12 @@ UTimes API 路由
 import json
 import logging
 from flask import Blueprint, request, jsonify
-from pydantic import ValidationError
 
-from api.models.record import Record, Extra, Users
-from api.schemas.record import ConfigSaveRequest
+from api.models.record import Record, UserSettings, Users
 from api.utils.auth import login_required
 from api.utils.record_helpers import (
     validate_date_format,
-    parse_record_content,
+    convert_items_to_response,
     build_record_response,
 )
 
@@ -42,10 +40,12 @@ def api_render():
     user_id = request.user.id
     record = Record.one(date=date, user_id=user_id)
     if record:
-        data = parse_record_content(record.get('content', ''))
-        if data is None:
-            return make_response(success=False, message='数据格式错误', code=500)
-        return make_response(data=data)
+        items = record.get('items', [])
+        return make_response(data={
+            'todo': record.get('note', ''),
+            'topic': [],
+            'dataList': items,
+        })
     else:
         return make_response(data=None)
 
@@ -61,24 +61,20 @@ def api_save():
 
         # 支持两种格式
         if 'content' in req_data and isinstance(req_data['content'], dict):
+            # 旧格式兼容：content: {todo, dataList}
             json_content = req_data['content']
             date = req_data.get('date')
+            note = json_content.get('todo', '')
+            data_list = json_content.get('dataList', [])
         elif 'content' in req_data and isinstance(req_data['content'], str):
-            json_content = parse_record_content(req_data['content'])
-            if json_content is None:
-                return make_response(success=False, message='content格式错误', code=400)
             date = req_data.get('date')
+            json_content = json.loads(req_data['content'])
+            note = json_content.get('todo', '')
+            data_list = json_content.get('dataList', [])
         else:
             date = req_data.get('date')
             note = req_data.get('note', '')
             data_list = req_data.get('dataList', [])
-            if not isinstance(data_list, list):
-                return make_response(success=False, message='dataList必须是数组', code=400)
-            json_content = {
-                'todo': note,
-                'topic': [],
-                'dataList': data_list
-            }
 
         if not date:
             return make_response(success=False, message='缺少date参数', code=400)
@@ -86,20 +82,19 @@ def api_save():
         if not validate_date_format(str(date)):
             return make_response(success=False, message='日期格式错误，应为YYYYMMDD', code=400)
 
-        # 排序
-        dl = list(json_content.get('dataList', []))
+        if not isinstance(data_list, list):
+            return make_response(success=False, message='dataList必须是数组', code=400)
 
+        # 排序
         def custom_sort(s):
             big = float(s.get('meaningful', 0))
             small = float(s.get('happy', 0)) * 0.5
             return -(big + small)
 
-        dl = sorted(dl, key=custom_sort)
-        json_content['dataList'] = dl
-        content = json.dumps(json_content, ensure_ascii=False)
+        data_list = sorted(data_list, key=custom_sort)
 
         user_id = request.user.id
-        Record.update_if_exist(user_id, date, content)
+        Record.update_if_exist(user_id, date, note, data_list)
 
         return make_response(message='保存成功')
     except json.JSONDecodeError:
@@ -121,9 +116,7 @@ def api_detail(date):
     user_id = request.user.id
     record = Record.one(date=date, user_id=user_id)
     if record:
-        result = build_record_response(record, include_extra_info=False)
-        if result is None:
-            return make_response(success=False, message='数据格式错误', code=500)
+        result = build_record_response(record)
         return make_response(data=result)
     else:
         return make_response(data={
@@ -143,19 +136,17 @@ def api_edit(date):
 
     user_id = request.user.id
     record = Record.one(date=date, user_id=user_id)
-    extra_row = Extra.one(user_id=user_id)
+    settings = UserSettings.one(user_id=user_id)
 
     if record:
-        result = build_record_response(record, extra_row=extra_row, include_extra_info=True)
-        if result is None:
-            return make_response(success=False, message='数据格式错误', code=500)
+        result = build_record_response(record, settings_row=settings, include_settings=True)
         return make_response(data=result)
     else:
         return make_response(data={
             'time': date,
-            'extra2Text': extra_row.get('extra2', '') if extra_row else '',
-            'extra3Links': extra_row.get('extra3', '') if extra_row else '',
-            'extraInfo': extra_row.get('extra2', '') if extra_row else '',
+            'extra2Text': settings.get('daily_tips', '') if settings else '',
+            'extra3Links': settings.get('quick_links', '') if settings else '',
+            'extraInfo': settings.get('daily_tips', '') if settings else '',
             'note': '',
             'items': [],
         })
@@ -175,25 +166,23 @@ def api_search():
         return make_response(data=[])
 
     user_id = request.user.id
-    data_array = Record.search(query, user_id=user_id)
+    records = Record.search(query, user_id=user_id)
     ret = []
-    for data in data_array:
+    for record in records:
         s = ''
-        try:
-            js = json.loads(data.get('content', ''))
-            if query in js.get('todo', ''):
-                s += js['todo']
+        note = record.get('note', '')
+        if query in note:
+            s += note
 
-            for info in js.get("dataList", []):
-                extra_info = info.get("extra", {})
-                c = extra_info.get('happy', '') + extra_info.get('meaningful', '') + extra_info.get('better', '')
-                if query in c or query in info.get("project", ""):
-                    s += c
-            s = s.replace('\n\n', '\n')
-            url = f'/detail/{data.get("date", "")}'
-            ret.append(dict(date=data.get('date', ''), url=url, content=s))
-        except json.JSONDecodeError:
-            continue
+        items = record.get('items', [])
+        for info in items:
+            extra_info = info.get("extra", {})
+            c = extra_info.get('happy', '') + extra_info.get('meaningful', '') + extra_info.get('better', '')
+            if query in c or query in info.get("project", ""):
+                s += c
+        s = s.replace('\n\n', '\n')
+        url = f'/detail/{record.get("date", "")}'
+        ret.append(dict(date=record.get('date', ''), url=url, content=s))
 
     return make_response(data=ret)
 
@@ -213,25 +202,23 @@ def api_calendar():
         if len(date_str) == 8:
             formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
             calendar_data[formatted_date] = []
-            try:
-                content_str = record.get('content', '')
-                if '编程' in content_str or '代码' in content_str:
-                    code += 1
-                if '运动' in content_str:
-                    fit += 1
 
-                content = json.loads(content_str)
-                items = content.get('dataList', [])
-                for item in items:
-                    project = item.get('project', '').strip()
-                    if project == '':
-                        continue
+            note = record.get('note', '')
+            items = record.get('items', [])
+            items_text = json.dumps(items, ensure_ascii=False) if isinstance(items, list) else str(items)
+
+            if '编程' in note or '代码' in note or '编程' in items_text or '代码' in items_text:
+                code += 1
+            if '运动' in note or '运动' in items_text:
+                fit += 1
+
+            for item in items:
+                project = item.get('project', '').strip()
+                if project:
                     calendar_data[formatted_date].append({
                         'type': 'success',
                         'content': project
                     })
-            except json.JSONDecodeError:
-                pass
 
     return make_response(data={
         'calendar': calendar_data,
@@ -248,44 +235,30 @@ def api_calendar():
 def api_migrate(date, target):
     """数据迁移 - 将未完成项移到目标日期"""
     user_id = request.user.id
-    data = Record.one(user_id=user_id, date=date)
+    record = Record.one(user_id=user_id, date=date)
     stores = []
     blanks = []
 
-    if data:
-        try:
-            c = json.loads(data.get('content', ''))
-            for info in c.get("dataList", []):
-                if info.get('time', '').strip() == '':
-                    blanks.append(info)
-                else:
-                    stores.append(info)
-
-            c['dataList'] = stores
-            content = json.dumps(c, ensure_ascii=False)
-            if not blanks:
-                return make_response(message='没有需要迁移的数据')
+    if record:
+        items = record.get('items', [])
+        for info in items:
+            if info.get('time', '').strip() == '':
+                blanks.append(info)
             else:
-                Record.update_if_exist(user_id=user_id, date=date, content=content)
-        except json.JSONDecodeError:
-            return make_response(success=False, message='数据格式错误', code=500)
+                stores.append(info)
+
+        if not blanks:
+            return make_response(message='没有需要迁移的数据')
+
+        Record.update_if_exist(user_id=user_id, date=date, note=record.get('note', ''), items=stores)
 
     next_day = Record.one(user_id=user_id, date=target)
     if next_day:
-        try:
-            c = json.loads(next_day.get('content', ''))
-            c.get("dataList", []).extend(blanks)
-            next_day_content = json.dumps(c, ensure_ascii=False)
-            Record.update_if_exist(user_id=user_id, date=target, content=next_day_content)
-        except json.JSONDecodeError:
-            return make_response(success=False, message='目标日期数据格式错误', code=500)
+        existing_items = next_day.get('items', [])
+        existing_items.extend(blanks)
+        Record.update_if_exist(user_id=user_id, date=target, note=next_day.get('note', ''), items=existing_items)
     else:
-        c = json.dumps(dict(
-            topic=[],
-            todo='',
-            dataList=blanks
-        ), ensure_ascii=False)
-        Record.update_if_exist(user_id=user_id, date=target, content=c)
+        Record.update_if_exist(user_id=user_id, date=target, note='', items=blanks)
 
     return make_response(message=f'成功迁移{len(blanks)}条数据到{target}')
 
@@ -295,12 +268,16 @@ def api_migrate(date, target):
 def api_config():
     """获取配置信息"""
     user_id = request.user.id
-    extra_data = Extra.one(user_id=user_id)
+    settings = UserSettings.one(user_id=user_id)
     return make_response(data={
-        'extra1': extra_data.get('extra1', '') if extra_data else '',
-        'extra2': extra_data.get('extra2', '') if extra_data else '',
-        'extra3': extra_data.get('extra3', '') if extra_data else '',
-        'extra': extra_data.get('extra1', '') if extra_data else '',
+        'ai_context': settings.get('ai_context', '') if settings else '',
+        'daily_tips': settings.get('daily_tips', '') if settings else '',
+        'quick_links': settings.get('quick_links', '') if settings else '',
+        # 兼容旧前端字段名
+        'extra1': settings.get('ai_context', '') if settings else '',
+        'extra2': settings.get('daily_tips', '') if settings else '',
+        'extra3': settings.get('quick_links', '') if settings else '',
+        'extra': settings.get('ai_context', '') if settings else '',
     })
 
 
@@ -313,30 +290,21 @@ def api_config_save():
         if not req_data:
             return make_response(success=False, message='请求体为空', code=400)
 
-        # 兼容 extra 字段映射到 extra1
-        if 'extra' in req_data and 'extra1' not in req_data:
-            req_data['extra1'] = req_data.pop('extra')
-
-        try:
-            config = ConfigSaveRequest.model_validate(req_data)
-        except ValidationError as e:
-            first_error = e.errors()[0]
-            field = first_error.get('loc', [''])[0]
-            msg = first_error.get('msg', '验证失败')
-            return make_response(success=False, message=f'{field}: {msg}', code=400)
+        # 兼容新旧字段名
+        ai_context = req_data.get('ai_context', req_data.get('extra1', req_data.get('extra', '')))
+        daily_tips = req_data.get('daily_tips', req_data.get('extra2', ''))
+        quick_links = req_data.get('quick_links', req_data.get('extra3', ''))
 
         user_id = request.user.id
-        extra_data = Extra.one(user_id=user_id)
-        if extra_data:
-            Extra.update(extra_data['id'], extra1=config.extra1, extra2=config.extra2, extra3=config.extra3)
+        settings = UserSettings.one(user_id=user_id)
+        if settings:
+            UserSettings.update(settings['id'], ai_context=ai_context, daily_tips=daily_tips, quick_links=quick_links)
         else:
-            Extra.create({
+            UserSettings.create({
                 'user_id': user_id,
-                'extra1': config.extra1,
-                'extra2': config.extra2,
-                'extra3': config.extra3,
-                'extra4': '',
-                'extra5': '',
+                'ai_context': ai_context,
+                'daily_tips': daily_tips,
+                'quick_links': quick_links,
             })
 
         return make_response(message='配置保存成功')
@@ -391,7 +359,7 @@ def api_profile(username):
         'name': user.get('name', ''),
         'avatar': user.get('avatar', ''),
         'bio': user.get('bio', ''),
-        'is_public': bool(user.get('is_public', 0)),
+        'is_public': bool(user.get('is_public', False)),
     })
 
 
@@ -402,19 +370,16 @@ def api_profile_detail(username, date):
     if not user:
         return make_response(success=False, message='用户不存在', code=404)
 
-    if not user.get('is_public', 0):
+    if not user.get('is_public', False):
         return make_response(success=False, message='该用户未公开记录', code=403)
 
     if not validate_date_format(date):
         return make_response(success=False, message='日期格式错误，应为YYYYMMDD', code=400)
 
-    # 用该用户的 user_id 查记录
-    user_id = str(user['id'])
+    user_id = str(user.get('user_id', user.get('id', '')))
     record = Record.one(date=date, user_id=user_id)
     if record:
-        result = build_record_response(record, include_extra_info=False)
-        if result is None:
-            return make_response(success=False, message='数据格式错误', code=500)
+        result = build_record_response(record)
         return make_response(data=result)
     else:
         return make_response(data={
@@ -435,11 +400,11 @@ def api_profile_settings():
             return make_response(success=False, message='请求体为空', code=400)
 
         user_id = request.user.id
-        user = Users.one(id=int(user_id) if user_id != '0' else 0)
+        user = Users.one(user_id=user_id)
         if not user:
             return make_response(success=False, message='用户不存在', code=404)
 
-        is_public = 1 if req_data.get('is_public', False) else 0
+        is_public = bool(req_data.get('is_public', False))
         Users.update(user['id'], is_public=is_public)
         return make_response(message='设置保存成功')
     except Exception as e:

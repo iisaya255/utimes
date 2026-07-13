@@ -1,17 +1,15 @@
 """
 Record 数据转换工具函数
 """
-import json
-
 from api.schemas.record import DataItem, DataItemExtra
 
 
-def convert_data_list_to_items(data_list) -> list[DataItem]:
-    """将后端数据格式转换为前端需要的格式"""
-    items = []
-    for idx, item in enumerate(data_list):
+def convert_items_to_response(items_list) -> list[dict]:
+    """将数据库中的 items 列表转为前端需要的格式（带递增 id）"""
+    result = []
+    for idx, item in enumerate(items_list):
         extra_raw = item.get('extra', {})
-        items.append(DataItem(
+        data_item = DataItem(
             id=idx + 1,
             project=item.get('project', ''),
             time=item.get('time', ''),
@@ -22,12 +20,13 @@ def convert_data_list_to_items(data_list) -> list[DataItem]:
                 meaningful=extra_raw.get('meaningful', ''),
                 better=extra_raw.get('better', ''),
             ),
-        ))
-    return items
+        )
+        result.append(data_item.model_dump())
+    return result
 
 
 def validate_date_format(date_str: str):
-    """验证日期格式 YYYYMMDD，检查日历有效性"""
+    """验证日期格式 YYYYMMDD"""
     if not date_str or len(date_str) != 8:
         return False
     try:
@@ -38,43 +37,32 @@ def validate_date_format(date_str: str):
         return False
 
 
-def parse_record_content(content_str):
-    """安全地解析 record 的 content JSON 字符串"""
-    try:
-        return json.loads(content_str)
-    except (json.JSONDecodeError, TypeError):
-        return None
-
-
-def build_record_response(record_row, extra_row=None, include_extra_info=True):
+def build_record_response(record_row, settings_row=None, include_settings=False):
     """
     构建记录数据的响应格式
-    record_row: 数据库返回的 dict
-    extra_row: extra 表的 dict（可选）
-    返回 dict（pydantic model 序列化后）
+    record_row: 数据库返回的 dict（含 date, note, items）
+    settings_row: user_settings 表的 dict（可选）
     """
     if not record_row:
         return None
 
-    try:
-        data = parse_record_content(record_row.get('content', ''))
-        if data is None:
-            return None
+    items_data = record_row.get('items', [])
+    if isinstance(items_data, str):
+        import json
+        items_data = json.loads(items_data)
 
-        items = convert_data_list_to_items(data.get('dataList', []))
+    items = convert_items_to_response(items_data)
 
-        result = {
-            'date': record_row.get('date', ''),
-            'time': record_row.get('date', ''),
-            'note': data.get('todo', ''),
-            'items': [item.model_dump() for item in items],
-        }
+    result = {
+        'date': record_row.get('date', ''),
+        'time': record_row.get('date', ''),
+        'note': record_row.get('note', ''),
+        'items': items,
+    }
 
-        if include_extra_info and extra_row:
-            result['extra2Text'] = extra_row.get('extra2', '')
-            result['extra3Links'] = extra_row.get('extra3', '')
-            result['extraInfo'] = extra_row.get('extra2', '')
+    if include_settings and settings_row:
+        result['extra2Text'] = settings_row.get('daily_tips', '')
+        result['extra3Links'] = settings_row.get('quick_links', '')
+        result['extraInfo'] = settings_row.get('daily_tips', '')
 
-        return result
-    except Exception:
-        return None
+    return result

@@ -43,18 +43,16 @@ class SearchQuery(BaseModel):
 
 class ConfigData(BaseModel):
     """配置数据响应"""
-    extra1: str = ""
-    extra2: str = ""
-    extra3: str = ""
-    extra: str = ""
+    ai_context: str = ""
+    daily_tips: str = ""
+    quick_links: str = ""
 
 
 class ConfigSaveRequest(BaseModel):
     """保存配置的请求体"""
-    extra1: str = Field(default="", max_length=10000)
-    extra2: str = Field(default="", max_length=10000)
-    extra3: str = Field(default="", max_length=10000)
-    extra: str = ""
+    ai_context: str = Field(default="", max_length=10000)
+    daily_tips: str = Field(default="", max_length=10000)
+    quick_links: str = Field(default="", max_length=10000)
 
 
 class CalendarEntry(BaseModel):

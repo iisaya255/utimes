@@ -1,91 +1,76 @@
 -- UTimes Supabase 数据库初始化 SQL
 -- 在 Supabase SQL Editor 中执行
 
--- device 表：日常记录
-CREATE TABLE IF NOT EXISTS device (
+-- records 表：每日记录（原 device 表）
+CREATE TABLE IF NOT EXISTS records (
     id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
-    date VARCHAR(30) NOT NULL,
-    content TEXT DEFAULT '',
+    date VARCHAR(8) NOT NULL,
+    note TEXT DEFAULT '',
+    items JSONB DEFAULT '[]'::jsonb,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
 );
 
--- 为 date + user_id 创建唯一索引
-CREATE UNIQUE INDEX IF NOT EXISTS idx_device_date_user ON device(date, user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_records_date_user ON records(date, user_id);
+CREATE INDEX IF NOT EXISTS idx_records_user_id ON records(user_id);
 
--- extra 表：用户配置
-CREATE TABLE IF NOT EXISTS extra (
+-- user_settings 表：用户配置（原 extra 表）
+CREATE TABLE IF NOT EXISTS user_settings (
     id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
-    extra1 TEXT DEFAULT '',
-    extra2 TEXT DEFAULT '',
-    extra3 TEXT DEFAULT '',
-    extra4 TEXT DEFAULT '',
-    extra5 TEXT DEFAULT '',
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    ai_context TEXT DEFAULT '',
+    daily_tips TEXT DEFAULT '',
+    quick_links TEXT DEFAULT ''
 );
 
--- 为 user_id 创建唯一索引（每个用户一条配置）
-CREATE UNIQUE INDEX IF NOT EXISTS idx_extra_user ON extra(user_id);
-
--- 启用 RLS (Row Level Security)
-ALTER TABLE device ENABLE ROW LEVEL SECURITY;
-ALTER TABLE extra ENABLE ROW LEVEL SECURITY;
-
--- RLS 策略：用户只能访问自己的数据
-CREATE POLICY "Users can view own device data" ON device
-    FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert own device data" ON device
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own device data" ON device
-    FOR UPDATE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete own device data" ON device
-    FOR DELETE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can view own extra data" ON extra
-    FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert own extra data" ON extra
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own extra data" ON extra
-    FOR UPDATE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete own extra data" ON extra
-    FOR DELETE USING (auth.uid() = user_id);
-
--- 允许 service_role 绕过 RLS（后端使用 service key 时）
--- 注意：使用 SUPABASE_SERVICE_KEY 的后端请求会自动绕过 RLS
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_settings_user ON user_settings(user_id);
 
 -- users 表：用户公开信息
 CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
     username VARCHAR(50) UNIQUE NOT NULL,
-    name VARCHAR(50) NOT NULL DEFAULT '',
+    name VARCHAR(100) DEFAULT '',
     avatar TEXT DEFAULT '',
     bio TEXT DEFAULT '',
-    is_public INTEGER DEFAULT 0
+    is_public BOOLEAN DEFAULT FALSE
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_user_id ON users(user_id);
 
--- users 表 RLS：公开信息可以被所有人读取，只有自己能修改
+-- 启用 RLS
+ALTER TABLE records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can view users" ON users
-    FOR SELECT USING (true);
+-- records RLS：用户只能访问自己的数据
+CREATE POLICY "Users can view own records" ON records
+    FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own records" ON records
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own records" ON records
+    FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own records" ON records
+    FOR DELETE USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can update own profile" ON users
+-- user_settings RLS：用户只能访问自己的配置
+CREATE POLICY "Users can view own settings" ON user_settings
+    FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own settings" ON user_settings
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own settings" ON user_settings
     FOR UPDATE USING (auth.uid() = user_id);
 
+-- users RLS：公开信息任何人可读，自己可改
+CREATE POLICY "Anyone can view users" ON users
+    FOR SELECT USING (true);
+CREATE POLICY "Users can update own profile" ON users
+    FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own profile" ON users
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
@@ -98,12 +83,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER device_updated_at
-    BEFORE UPDATE ON device
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER records_updated_at
+    BEFORE UPDATE ON records
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
-CREATE TRIGGER extra_updated_at
-    BEFORE UPDATE ON extra
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER user_settings_updated_at
+    BEFORE UPDATE ON user_settings
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
