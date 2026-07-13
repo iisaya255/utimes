@@ -9,8 +9,8 @@ import os
 def _get_backend():
     mode = os.environ.get("DATABASE_MODE", "sqlite")
     if mode == "supabase":
-        from api.models._supabase_backend import RecordSupabase, ExtraSupabase
-        return RecordSupabase, ExtraSupabase, None
+        from api.models._supabase_backend import RecordSupabase, ExtraSupabase, UsersSupabase
+        return RecordSupabase, ExtraSupabase, UsersSupabase
     else:
         from api.models._sqlite_backend import RecordSQLite, ExtraSQLite, UserSQLite
         return RecordSQLite, ExtraSQLite, UserSQLite

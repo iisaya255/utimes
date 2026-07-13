@@ -62,6 +62,33 @@ CREATE POLICY "Users can delete own extra data" ON extra
 -- 允许 service_role 绕过 RLS（后端使用 service key 时）
 -- 注意：使用 SUPABASE_SERVICE_KEY 的后端请求会自动绕过 RLS
 
+-- users 表：用户公开信息
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(50) NOT NULL DEFAULT '',
+    avatar TEXT DEFAULT '',
+    bio TEXT DEFAULT '',
+    is_public INTEGER DEFAULT 0
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_user_id ON users(user_id);
+
+-- users 表 RLS：公开信息可以被所有人读取，只有自己能修改
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view users" ON users
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can update own profile" ON users
+    FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own profile" ON users
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
 -- 自动更新 updated_at 触发器
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$

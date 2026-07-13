@@ -57,6 +57,37 @@ class RecordSupabase:
             }).execute()
 
 
+class UsersSupabase:
+    TABLE = "users"
+
+    @classmethod
+    def all(cls):
+        client = get_supabase()
+        result = client.table(cls.TABLE).select("*").order("id").execute()
+        return result.data or []
+
+    @classmethod
+    def one(cls, **kwargs):
+        client = get_supabase()
+        query = client.table(cls.TABLE).select("*")
+        for key, value in kwargs.items():
+            query = query.eq(key, value)
+        result = query.limit(1).execute()
+        if result.data:
+            return result.data[0]
+        return None
+
+    @classmethod
+    def update(cls, id, **kwargs):
+        client = get_supabase()
+        client.table(cls.TABLE).update(kwargs).eq("id", id).execute()
+
+    @classmethod
+    def create(cls, data: dict):
+        client = get_supabase()
+        client.table(cls.TABLE).insert(data).execute()
+
+
 class ExtraSupabase:
     TABLE = "extra"
 
