@@ -1,0 +1,39 @@
+{
+    "success": true,
+    "data": {
+        "8": [
+            {
+                "type": "warning",
+                "content": "测试"
+            },
+            {
+                "type": "success",
+                "content": "测试"
+            }
+        ],
+        "10": [
+            {
+                "type": "warning",
+                "content": "测试"
+            },
+            {
+                "type": "success",
+                "content": "测试"
+            },
+            {
+                "type": "error",
+                "content": "测试"
+            }
+        ],
+        "15": [
+            {
+                "type": "warning",
+                "content": "测试"
+            },
+            {
+                "type": "error",
+                "content": "测试"
+            }
+        ]
+    }
+}

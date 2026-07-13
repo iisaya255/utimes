@@ -1,0 +1,37 @@
+.openai-assistant {
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+.openai-assistant .ant-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.openai-assistant .ant-card-head {
+    border-bottom: 1px solid #e8ecf0;
+}
+
+.openai-assistant .assistant-config {
+    padding: 12px 0;
+}
+
+/* 深色模式 */
+body.dark .openai-assistant .ant-card {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+body.dark .openai-assistant .ant-card-head {
+    border-bottom-color: #334155;
+}
+
+body.dark .openai-assistant .ant-card-body {
+    background: #1e293b;
+    color: #cbd5e1;
+}
+
+body.dark .openai-assistant .assistant-config .ant-card {
+    background: #0f172a;
+}
+

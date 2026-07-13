@@ -1,0 +1,253 @@
+.events {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.events .ant-badge-status {
+    width: 100%;
+    overflow: hidden;
+    font-size: 12px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.events .ant-badge-status:hover {
+    background: #f0f4ff;
+}
+
+.notes-month {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 20px;
+}
+
+.notes-month section {
+    font-size: 28px;
+}
+
+.notes-month span {
+    font-size: 14px;
+    font-weight: 400;
+    color: #64748b;
+}
+
+/* 日历容器样式优化 */
+.ant-picker-calendar {
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    /* 移除固定背景色，让Ant Design主题自动处理 */
+}
+
+.ant-picker-calendar-header {
+    padding: 16px 0;
+}
+
+/* 统计卡片样式 - 横向长条布局 */
+.calendar-stats {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 32px 40px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 0;
+    width: 100%;
+}
+
+/* 统计项样式 */
+.calendar-stats .stats-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-width: 0;
+}
+
+.calendar-stats .stats-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+}
+
+.calendar-stats .stats-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #ffd700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.calendar-stats .stats-unit {
+    font-size: 13px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 2px;
+}
+
+/* 分隔线样式 */
+.calendar-stats .stats-divider {
+    width: 1px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 20px;
+    flex-shrink: 0;
+}
+
+/* 深色模式 */
+body.dark .notes-month {
+    color: #e2e8f0;
+}
+
+body.dark .notes-month span {
+    color: #94a3b8;
+}
+
+/* Ant Design 的 ConfigProvider 会自动处理暗色主题，这里只需要保留自定义样式 */
+body.dark .ant-picker-calendar {
+    /* 移除背景色设置，让Ant Design的暗色主题算法自动处理 */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark .events .ant-badge-status:hover {
+    background: #1e3a5f;
+}
+
+body.dark .calendar-stats {
+    background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);
+    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+}
+
+body.dark .calendar-stats .stats-divider {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* 日历页面移动端适配 */
+@media (max-width: 768px) {
+    .calendar-wrapper {
+        padding: 20px 16px !important;
+    }
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .calendar-stats {
+        padding: 24px 20px;
+        margin-bottom: 20px;
+        gap: 0;
+    }
+
+    .calendar-stats .stats-item {
+        padding: 0 8px;
+    }
+
+    .calendar-stats .stats-label {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    .calendar-stats .stats-value {
+        font-size: 24px;
+        margin-bottom: 2px;
+    }
+
+    .calendar-stats .stats-unit {
+        font-size: 11px;
+    }
+
+    .calendar-stats .stats-divider {
+        height: 50px;
+        margin: 0 12px;
+    }
+
+    .notes-month {
+        font-size: 24px;
+        margin-bottom: 16px;
+    }
+
+    .notes-month section {
+        font-size: 24px;
+    }
+
+    .ant-picker-calendar {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendar-wrapper {
+        padding: 16px 12px !important;
+    }
+
+    .calendar-stats {
+        padding: 20px 12px;
+        flex-wrap: nowrap;
+        gap: 0;
+    }
+
+    .calendar-stats .stats-item {
+        flex: 1;
+        padding: 0 4px;
+    }
+
+    .calendar-stats .stats-label {
+        font-size: 11px;
+        margin-bottom: 4px;
+    }
+
+    .calendar-stats .stats-value {
+        font-size: 20px;
+        margin-bottom: 2px;
+    }
+
+    .calendar-stats .stats-unit {
+        font-size: 10px;
+    }
+
+    .calendar-stats .stats-divider {
+        height: 40px;
+        margin: 0 6px;
+    }
+
+    .notes-month {
+        font-size: 20px;
+    }
+
+    .ant-picker-calendar {
+        padding: 12px;
+    }
+
+    .events .ant-badge-status {
+        font-size: 11px;
+    }
+
+    .calendar-search {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .calendar-search .ant-input {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 768px) {
+    .calendar-search {
+        width: 90% !important;
+        max-width: 100% !important;
+    }
+}

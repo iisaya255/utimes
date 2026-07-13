@@ -1,0 +1,12 @@
+{
+    "time": "20240214",
+    "blur": false, 
+    "theme": "light",
+    "extraInfo": "tips",
+    "note": "this is note.",
+    "items": [
+        {"id": 1},
+        {"id": 2},
+        {"id": 3}
+    ]
+}

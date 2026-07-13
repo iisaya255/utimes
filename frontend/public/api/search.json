@@ -1,0 +1,9 @@
+{   "success": true,
+    "data": [
+        {
+            "url": "/detail/20240812",
+            "date": "20240812",
+            "content": "rust/cpp的问题(大量的ffi问题)\n之前用 rust 替代 cpp 写 dll\n无一例外遇到的问题是 cpp 的一坨 sdk\n这种时候需要写 binding\n比如我是 cxx, 生成 binding\n有的人是纯 rust 然后 cpp\n有的人是 extern c\n还能看到 extern cpp里面插入 cpp"
+        }
+    ]
+}

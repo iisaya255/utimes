@@ -1,0 +1,179 @@
+.container-item {
+    width: 100%;
+    border: 2px solid #e0f2fe;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+}
+
+.container-item:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 4px 16px rgba(14, 165, 233, 0.15);
+    transform: translateY(-2px);
+}
+
+.container-item pre {
+    font-size: 16px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.8;
+    color: #475569;
+    margin: 12px 0 0 0;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 4px solid #38bdf8;
+}
+
+.item-comment {
+    font-size: 18px;
+    font-weight: 600;
+    color: #0ea5e9;
+    margin-bottom: 8px;
+    display: inline-block;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.item-comment:hover {
+    background: linear-gradient(135deg, #bae6fd 0%, #7dd3fc 100%);
+    transform: scale(1.05);
+}
+
+/* 深色模式 */
+body.dark .container-item {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+body.dark .container-item:hover {
+    border-color: #60a5fa;
+    box-shadow: 0 4px 16px rgba(96, 165, 250, 0.2);
+}
+
+body.dark .container-item pre {
+    color: #cbd5e1;
+    background: #0f172a;
+    border-left-color: #60a5fa;
+}
+
+body.dark .item-comment {
+    color: #60a5fa;
+    background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+}
+
+body.dark .item-comment:hover {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+}
+
+/* 搜索状态样式 */
+p:has(span) {
+    text-align: center;
+    padding: 40px 20px;
+    font-size: 18px;
+    color: #64748b;
+}
+
+p:has(span) span {
+    color: #94a3b8;
+}
+
+body.dark p:has(span) {
+    color: #94a3b8;
+}
+
+body.dark p:has(span) span {
+    color: #64748b;
+}
+
+/* 搜索页面移动端适配 */
+@media (max-width: 768px) {
+    .search-container {
+        padding: 20px 16px !important;
+    }
+
+    .search-header h2 {
+        font-size: 22px !important;
+    }
+
+    .search-header p {
+        font-size: 14px !important;
+    }
+
+    .search-input {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .search-results-header p {
+        font-size: 16px !important;
+    }
+
+    .search-results-header span {
+        font-size: 18px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .search-container {
+        padding: 16px 12px !important;
+    }
+
+    .search-header h2 {
+        font-size: 20px !important;
+    }
+
+    .search-header p {
+        font-size: 13px !important;
+    }
+
+    .search-results-header p {
+        font-size: 14px !important;
+    }
+
+    .search-results-header span {
+        font-size: 16px !important;
+    }
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .container-item {
+        padding: 16px;
+        margin: 12px 0;
+    }
+
+    .container-item pre {
+        font-size: 14px;
+        padding: 12px;
+    }
+
+    .item-comment {
+        font-size: 16px;
+        padding: 5px 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container-item {
+        padding: 12px;
+        margin: 10px 0;
+    }
+
+    .container-item pre {
+        font-size: 13px;
+        padding: 10px;
+        line-height: 1.6;
+    }
+
+    .item-comment {
+        font-size: 14px;
+        padding: 4px 8px;
+    }
+}
+
