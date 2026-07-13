@@ -15,15 +15,28 @@ class MockUser:
         self.email = "dev@localhost"
 
 
+_auth_client = None
+
+
+def _get_auth_client():
+    """获取用于鉴权的 Supabase 客户端单例"""
+    global _auth_client
+    if _auth_client is None:
+        url = os.environ.get("SUPABASE_URL", "")
+        key = os.environ.get("SUPABASE_ANON_KEY", "")
+        if not url or not key:
+            return None
+        from supabase import create_client
+        _auth_client = create_client(url, key)
+    return _auth_client
+
+
 def get_user_from_token(token: str):
     """通过 Supabase 验证 JWT token 并返回用户信息"""
-    url = os.environ.get("SUPABASE_URL", "")
-    key = os.environ.get("SUPABASE_ANON_KEY", "")
-    if not url or not key:
+    client = _get_auth_client()
+    if not client:
         return None
     try:
-        from supabase import create_client
-        client = create_client(url, key)
         user_response = client.auth.get_user(token)
         if user_response and user_response.user:
             return user_response.user
