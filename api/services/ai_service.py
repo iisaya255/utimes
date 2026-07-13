@@ -104,7 +104,7 @@ def summarize_week(user_id: str):
     week_text = _build_week_summary_text(week_data)
 
     client = OpenAI(
-        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        base_url="https://api.deepseek.com",
         api_key=api_key,
         timeout=30.0,
     )
@@ -123,7 +123,7 @@ def summarize_week(user_id: str):
 总结要简洁明了，控制在200字以内。"""
 
     response = client.chat.completions.create(
-        model="qwen3-max",
+        model="deepseek-v3",
         messages=[
             {"role": "system", "content": "你是一个帮助用户总结和分析日常记录的助手。"},
             {"role": "user", "content": prompt},
@@ -148,7 +148,7 @@ def plan_today(user_id: str):
     context_text = _build_plan_context_text(week_data)
 
     client = OpenAI(
-        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        base_url="https://api.deepseek.com",
         api_key=api_key,
         timeout=30.0,
     )
@@ -175,7 +175,7 @@ def plan_today(user_id: str):
 只返回JSON数组，不要其他文字说明。"""
 
     response = client.chat.completions.create(
-        model="qwen3-max",
+        model="deepseek-v3",
         messages=[
             {"role": "system", "content": "你是一个帮助用户规划日常任务的助手。你总是返回有效的JSON格式数据。"},
             {"role": "user", "content": prompt},

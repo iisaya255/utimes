@@ -410,3 +410,84 @@ def api_profile_settings():
     except Exception as e:
         logging.error(f'保存公开设置失败: {str(e)}', exc_info=True)
         return make_response(success=False, message='保存失败', code=500)
+
+
+@api.route('/api/profile/me', methods=['GET'])
+@login_required
+def api_profile_me():
+    """获取当前用户自己的信息"""
+    try:
+        user_id = request.user.id
+        user = Users.one(user_id=user_id)
+        if not user:
+            return make_response(success=False, message='用户不存在', code=404)
+        return make_response(data={
+            'username': user.get('username', ''),
+            'name': user.get('name', ''),
+            'bio': user.get('bio', ''),
+            'avatar': user.get('avatar', ''),
+            'is_public': bool(user.get('is_public', False)),
+        })
+    except Exception as e:
+        logging.error(f'获取用户信息失败: {str(e)}', exc_info=True)
+        return make_response(success=False, message='获取失败', code=500)
+
+
+@api.route('/api/profile/update', methods=['POST'])
+@login_required
+def api_profile_update():
+    """更新当前用户信息（username、name、bio、is_public）"""
+    try:
+        req_data = request.get_json()
+        if not req_data:
+            return make_response(success=False, message='请求体为空', code=400)
+
+        user_id = request.user.id
+        user = Users.one(user_id=user_id)
+        if not user:
+            return make_response(success=False, message='用户不存在', code=404)
+
+        # 检查 username 唯一性
+        new_username = req_data.get('username', '').strip()
+        if new_username and new_username != user.get('username'):
+            existing = Users.one(username=new_username)
+            if existing:
+                return make_response(success=False, message='用户名已被占用', code=409)
+
+        update_data = {}
+        if new_username:
+            update_data['username'] = new_username
+        if 'name' in req_data:
+            update_data['name'] = req_data['name'].strip()
+        if 'bio' in req_data:
+            update_data['bio'] = req_data['bio'].strip()
+        if 'is_public' in req_data:
+            update_data['is_public'] = bool(req_data['is_public'])
+
+        if update_data:
+            Users.update(user['id'], **update_data)
+        return make_response(message='用户信息更新成功')
+    except Exception as e:
+        logging.error(f'更新用户信息失败: {str(e)}', exc_info=True)
+        return make_response(success=False, message='更新失败', code=500)
+
+
+@api.route('/api/profile/check-username', methods=['POST'])
+@login_required
+def api_check_username():
+    """检查用户名是否可用"""
+    try:
+        req_data = request.get_json()
+        username = req_data.get('username', '').strip() if req_data else ''
+        if not username:
+            return make_response(success=False, message='用户名不能为空', code=400)
+
+        user_id = request.user.id
+        existing = Users.one(username=username)
+        # 如果找到的是自己，说明没变
+        if existing and existing.get('user_id') != user_id:
+            return make_response(data={'available': False, 'message': '用户名已被占用'})
+        return make_response(data={'available': True, 'message': '用户名可用'})
+    except Exception as e:
+        logging.error(f'检查用户名失败: {str(e)}', exc_info=True)
+        return make_response(success=False, message='检查失败', code=500)

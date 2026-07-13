@@ -168,6 +168,21 @@ export const deviceApi = {
      * 更新公开设置
      */
     updateProfileSettings: (data) => post('/api/profile/settings', data),
+
+    /**
+     * 获取当前用户信息
+     */
+    getMyProfile: () => get('/api/profile/me'),
+
+    /**
+     * 更新用户信息
+     */
+    updateProfile: (data) => post('/api/profile/update', data),
+
+    /**
+     * 检查用户名是否可用
+     */
+    checkUsername: (username) => post('/api/profile/check-username', { username }),
 };
 
 export default deviceApi;
