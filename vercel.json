@@ -18,8 +18,12 @@
       "dest": "api/index.py"
     },
     {
+      "src": "^/(static|asset-manifest\\.json|favicon\\.ico|manifest\\.json|robots\\.txt|logo.*\\.png)(/.*)?$",
+      "dest": "frontend/$1$2"
+    },
+    {
       "src": "/(.*)",
-      "dest": "frontend/$1"
+      "dest": "frontend/index.html"
     }
   ]
 }
