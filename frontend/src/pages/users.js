@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Input, List, Avatar } from "antd";
+import { useNavigate } from "react-router-dom";
 import deviceApi from "../services/api";
 
 
@@ -9,9 +10,13 @@ import deviceApi from "../services/api";
 
 
 function Users(){
+    const navigate = useNavigate()
     const [keyword, setkeyword] = useState('')
     const [users, setUsers] = useState([])
-    const filtered = users.filter(u => u.name.includes(keyword))
+    const filtered = users.filter(u => {
+        const displayName = u.name || u.username || ''
+        return displayName.toLowerCase().includes(keyword.toLowerCase())
+    })
     
     useEffect(()=> {
         deviceApi.getUsers().then(res => {
@@ -35,14 +40,21 @@ function Users(){
             {/*用户列表*/}
             <List
                 dataSource={filtered}
-                renderItem={user =>(
-                    <List.Item>
-                        <List.Item.Meta
-                            avatar={<Avatar>{user.name[0]}</Avatar>}
-                            title={user.name}
-                        />
-                    </List.Item>
-                )}
+                renderItem={user => {
+                    const displayName = user.name || user.username || '未命名'
+                    return (
+                        <List.Item
+                            style={{cursor: 'pointer'}}
+                            onClick={() => navigate(`/user/${user.username}`)}
+                        >
+                            <List.Item.Meta
+                                avatar={<Avatar>{displayName[0]}</Avatar>}
+                                title={displayName}
+                                description={`@${user.username}`}
+                            />
+                        </List.Item>
+                    )
+                }}
             />
 
         </div>
