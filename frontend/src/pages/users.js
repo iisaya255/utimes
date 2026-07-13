@@ -45,7 +45,7 @@ function Users(){
                     return (
                         <List.Item
                             style={{cursor: 'pointer'}}
-                            onClick={() => navigate(`/user/${user.username}`)}
+                            onClick={() => navigate(`/${user.username}`)}
                         >
                             <List.Item.Meta
                                 avatar={<Avatar>{displayName[0]}</Avatar>}
