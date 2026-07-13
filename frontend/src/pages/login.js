@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button, Input, Card, Typography, message, Space } from 'antd'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 
 const { Title } = Typography
@@ -8,10 +9,20 @@ const { Title } = Typography
  * 登录页面 - 使用 Supabase Email/Password 认证
  */
 function Login() {
+    const navigate = useNavigate()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
-    // const [isSignUp, setIsSignUp] = useState(false)
+
+    // 检查登录态，已登录则跳转
+    useEffect(() => {
+        if (!supabase) return
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                navigate('/edit', { replace: true })
+            }
+        })
+    }, [navigate])
 
     const handleSubmit = async () => {
         if (!email || !password) {
@@ -39,7 +50,7 @@ function Login() {
                 //     window.location.href = '/edit'
                 // }
                 message.success('登录成功')
-                window.location.href = '/edit'
+                navigate('/edit')
             }
         } catch (err) {
             message.error('操作失败: ' + err.message)
